@@ -1,7 +1,7 @@
 <template>
   <!--  <div>三级分类维护</div>-->
   <el-tree :data="menus" :props="defaultProps"
-  :expand-on-click-node="false" show-checkbox node-key="catId">
+  :expand-on-click-node="false" show-checkbox node-key="catId" :default-expanded-keys="expandedKey">
     <span class="custom-tree-node" slot-scope="{ node, data }">
       <span>{{ node.label }}</span>
       <span>
@@ -33,6 +33,7 @@ export default {
   data () {
     return {
       menus: [],
+      expandedKey: [],
       defaultProps: {
         children: 'children',
         label: 'name'
@@ -62,7 +63,30 @@ export default {
     },
 
     remove (node, data) {
-      console.log('Try remove', data)
+      let ids = [data.catId]
+      this.$confirm(`是否删除【${data.name}】菜单?`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        // 发送 POST 请求给后端进行删除操作
+        this.$http({
+          url: this.$http.adornUrl('/product/category/delete'),
+          method: 'post',
+          data: this.$http.adornData(ids, false)
+        }).then(({data}) => {
+          console.log('removed ids success:', ids)
+          // Step1. 获得所有菜单
+          this.getMenus()
+          // Step2. 设置需要展开的菜单
+          this.expandedKey = [node.parent.data.catId]
+        })
+
+        this.$message({
+          type: 'success',
+          message: '删除成功!'
+        })
+      }).catch(() => {})
     }
   },
   // 计算属性
